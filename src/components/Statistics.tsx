@@ -138,7 +138,7 @@ const Statistics: React.FC<StatisticsProps> = ({ medications, reminders }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap  items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Statistics</h2>
         <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-md">
           {[
