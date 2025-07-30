@@ -209,7 +209,7 @@ const AddMedicationModal: React.FC<AddMedicationModalProps> = ({ onClose, onAdd 
                     <Clock className="h-4 w-4 inline mr-1" />
                     Reminder Times
                   </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {schedule.times.map((time, timeIndex) => (
                       <input
                         key={timeIndex}
