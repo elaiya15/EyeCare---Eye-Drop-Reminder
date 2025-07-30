@@ -179,7 +179,7 @@ function App() {
   };
 
   return (
-  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+   <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
     <div className="max-w-6xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
@@ -259,7 +259,9 @@ function App() {
         />
       )}
     </div>
-  </div>
+    </div>
 );
+
+}
 
 export default App;
