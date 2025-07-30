@@ -179,81 +179,87 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-500 p-3 rounded-full">
-              <Eye className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">EyeCare</h1>
-              <p className="text-gray-600">Your eye drop reminder companion</p>
-            </div>
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
+        {/* Title Section */}
+        <div className="flex items-center space-x-3">
+          <div className="bg-blue-500 p-3 rounded-full">
+            <Eye className="h-8 w-8 text-white" />
           </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">EyeCare</h1>
+            <p className="text-gray-600 text-sm sm:text-base">Your eye drop reminder companion</p>
+          </div>
+        </div>
+
+        {/* Add Button */}
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-full flex items-center justify-center space-x-2 transition-colors duration-200 shadow-md hover:shadow-xl"
+        >
+          <Plus className="h-5 w-5" />
+          <span className="text-sm font-medium">Add Medication</span>
+        </button>
+      </div>
+
+      {/* Tab Buttons */}
+      <div className="flex overflow-x-auto flex-nowrap bg-white rounded-xl p-1 mb-6 shadow-md">
+        {[
+          { id: 'today', label: 'Today', icon: Clock },
+          { id: 'medications', label: 'Medications', icon: Eye },
+          { id: 'statistics', label: 'Statistics', icon: Calendar }
+        ].map(({ id, label, icon: Icon }) => (
           <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full flex items-center space-x-2 transition-colors duration-200 shadow-lg hover:shadow-xl"
+            key={id}
+            onClick={() => setActiveTab(id as any)}
+            className={`flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg flex-1 min-w-max transition-all duration-200 ${
+              activeTab === id
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
           >
-            <Plus className="h-5 w-5" />
-            <span>Add Medication</span>
+            <Icon className="h-5 w-5" />
+            <span className="text-sm font-medium">{label}</span>
           </button>
-        </div>
+        ))}
+      </div>
 
-        <div className="flex space-x-1 bg-white rounded-xl p-1 mb-6 shadow-md">
-          {[
-            { id: 'today', label: 'Today', icon: Clock },
-            { id: 'medications', label: 'Medications', icon: Eye },
-            { id: 'statistics', label: 'Statistics', icon: Calendar }
-          ].map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id as any)}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-lg flex-1 transition-all duration-200 ${
-                activeTab === id
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <Icon className="h-5 w-5" />
-              <span className="font-medium">{label}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="space-y-6">
-          {activeTab === 'today' && (
-            <TodayReminders
-              medications={medications}
-              reminders={reminders}
-              onMarkComplete={markReminderComplete}
-              getCurrentSchedule={getCurrentSchedule}
-            />
-          )}
-
-          {activeTab === 'medications' && (
-            <MedicationList
-              medications={medications}
-              onToggle={toggleMedication}
-              onDelete={deleteMedication}
-              getCurrentSchedule={getCurrentSchedule}
-            />
-          )}
-
-          {activeTab === 'statistics' && (
-            <Statistics medications={medications} reminders={reminders} />
-          )}
-        </div>
-
-        {showAddModal && (
-          <AddMedicationModal
-            onClose={() => setShowAddModal(false)}
-            onAdd={addMedication}
+      {/* Tab Content */}
+      <div className="space-y-6">
+        {activeTab === 'today' && (
+          <TodayReminders
+            medications={medications}
+            reminders={reminders}
+            onMarkComplete={markReminderComplete}
+            getCurrentSchedule={getCurrentSchedule}
           />
         )}
+
+        {activeTab === 'medications' && (
+          <MedicationList
+            medications={medications}
+            onToggle={toggleMedication}
+            onDelete={deleteMedication}
+            getCurrentSchedule={getCurrentSchedule}
+          />
+        )}
+
+        {activeTab === 'statistics' && (
+          <Statistics medications={medications} reminders={reminders} />
+        )}
       </div>
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <AddMedicationModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={addMedication}
+        />
+      )}
     </div>
-  );
-}
+  </div>
+);
 
 export default App;
