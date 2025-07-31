@@ -1,5 +1,6 @@
+//App.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Eye, Plus, Clock, Calendar } from 'lucide-react';
+import { Eye, Plus, Clock, Calendar, UploadCloud, DownloadCloud } from 'lucide-react';
 import MedicationList from './components/MedicationList';
 import AddMedicationModal from './components/AddMedicationModal';
 import TodayReminders from './components/TodayReminders';
@@ -23,20 +24,12 @@ function App() {
     setMedications(loadedMedications);
     setReminders(loadedReminders);
     notificationService.requestPermission().then(granted => {
-    if (!granted) {
-      console.warn("🔕 Notification permission not granted");
-    }
-  });
+      if (!granted) {
+        console.warn("🔕 Notification permission not granted");
+      }
+    });
   }, []);
 
-//   Notification.requestPermission().then(permission => {
-//   if (permission === 'granted') {
-//     new Notification('Test Notification', {
-//       body: 'If you see this, notifications are working!',
-//       icon: '/eye-icon.png'
-//     });
-//   }
-// });
   useEffect(() => {
     const now = new Date();
     const delayUntilNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
@@ -178,90 +171,131 @@ function App() {
     storageService.saveReminders(updatedReminders);
   };
 
+  const backupMedications = () => {
+    const dataStr = JSON.stringify(medications, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'eyecare-medications-backup.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const restoreMedications = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target?.result as string);
+        if (Array.isArray(importedData)) {
+          setMedications(importedData);
+          storageService.saveMedications(importedData);
+          alert('✅ Medications restored successfully!');
+        } else {
+          alert('❌ Invalid file format.');
+        }
+      } catch {
+        alert('❌ Failed to parse the file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
-   <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
-        {/* Title Section */}
-        <div className="flex items-center space-x-3">
-          <div className="bg-blue-500 p-3 rounded-full">
-            <Eye className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      <div className="max-w-6xl px-4 py-6 mx-auto">
+        <div className="flex flex-col mb-8 space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-blue-500 rounded-full">
+              <Eye className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">EyeCare</h1>
+              <p className="text-sm text-gray-600 sm:text-base">Your eye drop reminder companion</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">EyeCare</h1>
-            <p className="text-gray-600 text-sm sm:text-base">Your eye drop reminder companion</p>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              onClick={backupMedications}
+              className="flex items-center justify-center w-full px-4 py-2 space-x-2 text-white bg-yellow-500 rounded-full sm:w-auto hover:bg-yellow-600"
+            >
+              <DownloadCloud className="w-4 h-4" />
+              <span className="text-sm">Backup</span>
+            </button>
+            <label className="flex items-center justify-center w-full px-4 py-2 space-x-2 text-white bg-green-500 rounded-full cursor-pointer sm:w-auto hover:bg-green-600">
+              <UploadCloud className="w-4 h-4" />
+              <span className="text-sm">Restore</span>
+              <input type="file" accept=".json" onChange={restoreMedications} hidden />
+            </label>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center justify-center w-full px-5 py-3 space-x-2 text-white transition-colors duration-200 bg-blue-500 rounded-full shadow-md sm:w-auto hover:bg-blue-600 hover:shadow-xl"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-sm font-medium">Add Medication</span>
+            </button>
           </div>
         </div>
 
-        {/* Add Button */}
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-full flex items-center justify-center space-x-2 transition-colors duration-200 shadow-md hover:shadow-xl"
-        >
-          <Plus className="h-5 w-5" />
-          <span className="text-sm font-medium">Add Medication</span>
-        </button>
-      </div>
+        <div className="flex p-1 mb-6 overflow-x-auto bg-white shadow-md flex-nowrap rounded-xl">
+          {[
+            { id: 'today', label: 'Today', icon: Clock },
+            { id: 'medications', label: 'Medications', icon: Eye },
+            { id: 'statistics', label: 'Statistics', icon: Calendar }
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id as any)}
+              className={`flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg flex-1 min-w-max transition-all duration-200 ${
+                activeTab === id
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-sm font-medium">{label}</span>
+            </button>
+          ))}
+        </div>
 
-      {/* Tab Buttons */}
-      <div className="flex overflow-x-auto flex-nowrap bg-white rounded-xl p-1 mb-6 shadow-md">
-        {[
-          { id: 'today', label: 'Today', icon: Clock },
-          { id: 'medications', label: 'Medications', icon: Eye },
-          { id: 'statistics', label: 'Statistics', icon: Calendar }
-        ].map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id as any)}
-            className={`flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg flex-1 min-w-max transition-all duration-200 ${
-              activeTab === id
-                ? 'bg-blue-500 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <Icon className="h-5 w-5" />
-            <span className="text-sm font-medium">{label}</span>
-          </button>
-        ))}
-      </div>
+        <div className="space-y-6">
+          {activeTab === 'today' && (
+            <TodayReminders
+              medications={medications}
+              reminders={reminders}
+              onMarkComplete={markReminderComplete}
+              getCurrentSchedule={getCurrentSchedule}
+            />
+          )}
 
-      {/* Tab Content */}
-      <div className="space-y-6">
-        {activeTab === 'today' && (
-          <TodayReminders
-            medications={medications}
-            reminders={reminders}
-            onMarkComplete={markReminderComplete}
-            getCurrentSchedule={getCurrentSchedule}
+          {activeTab === 'medications' && (
+            <MedicationList
+              medications={medications}
+              onToggle={toggleMedication}
+              onDelete={deleteMedication}
+              getCurrentSchedule={getCurrentSchedule}
+            />
+          )}
+
+          {activeTab === 'statistics' && (
+            <Statistics medications={medications} reminders={reminders} />
+          )}
+        </div>
+
+        {showAddModal && (
+          <AddMedicationModal
+            onClose={() => setShowAddModal(false)}
+            onAdd={addMedication}
           />
         )}
-
-        {activeTab === 'medications' && (
-          <MedicationList
-            medications={medications}
-            onToggle={toggleMedication}
-            onDelete={deleteMedication}
-            getCurrentSchedule={getCurrentSchedule}
-          />
-        )}
-
-        {activeTab === 'statistics' && (
-          <Statistics medications={medications} reminders={reminders} />
-        )}
       </div>
-
-      {/* Add Modal */}
-      {showAddModal && (
-        <AddMedicationModal
-          onClose={() => setShowAddModal(false)}
-          onAdd={addMedication}
-        />
-      )}
     </div>
-    </div>
-);
-
+  );
 }
 
 export default App;
