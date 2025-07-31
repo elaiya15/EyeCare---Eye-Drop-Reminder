@@ -1,10 +1,11 @@
-// src/services/notificationService.ts
+// notificationService.ts
 class NotificationService {
   private hasPermission = false;
   private selectedVoice: SpeechSynthesisVoice | null = null;
-  private alarmAudio = new Audio('/alarm.mp3'); // Ensure this file exists in /public
+  private alarmAudio = new Audio('/alarm.mp3'); // Place alarm.mp3 in /public
 
   constructor() {
+    // Load voices
     if ('speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => this.setPreferredVoice();
       this.setPreferredVoice();
@@ -28,51 +29,54 @@ class NotificationService {
     }
 
     if (Notification.permission === 'granted') {
+      console.log("✅ Notification permission already granted");
       this.hasPermission = true;
       return true;
     }
 
     if (Notification.permission !== 'denied') {
       const permission = await Notification.requestPermission();
+      console.log("🔔 Notification permission requested:", permission);
       this.hasPermission = permission === 'granted';
       return this.hasPermission;
     }
 
+    console.warn("⚠️ Notification previously denied by user");
     return false;
   }
 
-  // ✅ Updated to use Service Worker for PWA compatibility
-  async showNotification(title: string, body: string): Promise<void> {
-    const options: NotificationOptions = {
-      body,
-      icon: '/eye-icon.png',
-      tag: 'eyecare-reminder',
-      requireInteraction: true
-    };
+  // 🔔 System notification + voice
+  showNotification(title: string, body: string): void {
+    console.log("📢 Attempting to show notification:", { title, body });
 
-    try {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (reg && reg.active) {
-        reg.active.postMessage({
-          type: 'SHOW_NOTIFICATION',
-          payload: { title, options }
-        });
-        console.log('✅ Notification sent to Service Worker');
-      } else if (this.hasPermission) {
-        new Notification(title, options);
-        console.log('⚠️ Fallback to direct notification');
-      } else {
-        console.warn('❌ No permission to show notification');
-        alert(`${title}: ${body}`);
-      }
-    } catch (error) {
-      console.error('❌ Notification error:', error);
+    if (this.hasPermission) {
+      console.log("✅ Permission granted, showing notification...");
+
+      const notification = new Notification(title, {
+        body,
+        icon: '/eye-icon.png',
+        tag: 'eyecare-reminder',
+        requireInteraction: true
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      setTimeout(() => {
+        notification.close();
+      }, 10000);
+    } else {
+      console.warn("❌ No permission to show system notification.");
+      alert(`${title}: ${body}`); // Optional fallback
     }
 
     this.speak(`${title}. ${body}`);
     this.playBeep();
   }
 
+  // 🗣️ Speak using system voice
   private speak(message: string): void {
     if ('speechSynthesis' in window) {
       const utter = new SpeechSynthesisUtterance(message);
@@ -84,11 +88,13 @@ class NotificationService {
     }
   }
 
+  // 🔊 Play notification sound
   private playBeep(): void {
-    const beep = new Audio('/reminder.mp3');
+    const beep = new Audio('/reminder.mp3'); // Place reminder.mp3 in /public
     beep.play().catch(() => console.warn('Beep blocked by autoplay policy'));
   }
 
+  // 🚨 Show popup + loud alarm
   showPopupAlert(message: string, onStop: () => void): void {
     this.alarmAudio.currentTime = 0;
     this.alarmAudio.play().catch(() => console.warn('Alarm play failed'));
