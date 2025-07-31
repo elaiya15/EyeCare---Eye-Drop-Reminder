@@ -183,87 +183,27 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // const restoreMedications = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = event.target.files?.[0];
-  //   if (!file) return;
+  const restoreMedications = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  //   const reader = new FileReader();
-  //   reader.onload = (e) => {
-  //     try {
-  //       const importedData = JSON.parse(e.target?.result as string);
-  //       if (Array.isArray(importedData)) {
-  //         setMedications(importedData);
-  //         storageService.saveMedications(importedData);
-  //         alert('✅ Medications restored successfully!');
-  //       } else {
-  //         alert('❌ Invalid file format.');
-  //       }
-  //     } catch {
-  //       alert('❌ Failed to parse the file.');
-  //     }
-  //   };
-  //   reader.readAsText(file);
-  // };
-// const restoreMedications = (event: React.ChangeEvent<HTMLInputElement>) => {
-//   const file = event.target.files?.[0];
-//   if (!file) return;
-
-//   const reader = new FileReader();
-//   reader.onload = (e) => {
-//     try {
-//       const importedData = JSON.parse(e.target?.result as string);
-
-//       if (Array.isArray(importedData)) {
-//         const hydrated = importedData.map((med: any) => ({
-//           ...med,
-//           startDate: new Date(med.startDate),
-//           createdAt: new Date(med.createdAt),
-//         }));
-
-//         setMedications(hydrated);
-//         storageService.saveMedications(hydrated);
-//         alert('✅ Medications restored successfully!');
-//       } else {
-//         alert('❌ Invalid file format.');
-//       }
-//     } catch {
-//       alert('❌ Failed to parse the file.');
-//     }
-//   };
-//   reader.readAsText(file);
-// };
-const restoreMedications = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const importedData = JSON.parse(e.target?.result as string);
-
-      if (Array.isArray(importedData)) {
-        const hydrated = importedData.map((med: any) => ({
-          ...med,
-          startDate: new Date(med.startDate),
-          createdAt: new Date(med.createdAt),
-        }));
-
-        setMedications(hydrated);
-        storageService.saveMedications(hydrated);
-        alert('✅ Medications restored successfully!');
-      } else {
-        alert('❌ Invalid file format.');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target?.result as string);
+        if (Array.isArray(importedData)) {
+          setMedications(importedData);
+          storageService.saveMedications(importedData);
+          alert('✅ Medications restored successfully!');
+        } else {
+          alert('❌ Invalid file format.');
+        }
+      } catch {
+        alert('❌ Failed to parse the file.');
       }
-    } catch (err) {
-      alert('❌ Failed to parse the file.');
-    }
-
-    // ✅ Clear the file input so the same file can trigger change next time
-    event.target.value = '';
+    };
+    reader.readAsText(file);
   };
-
-  reader.readAsText(file);
-};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
