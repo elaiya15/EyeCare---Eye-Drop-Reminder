@@ -1,17 +1,15 @@
+// src/services/notificationService.ts
 class NotificationService {
   private hasPermission = false;
   private selectedVoice: SpeechSynthesisVoice | null = null;
-  private alarmAudio = new Audio('/alarm.mp3'); // Place alarm.mp3 in /public
+  private alarmAudio = new Audio('/alarm.mp3'); // Ensure this file exists in /public
 
   constructor() {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => this.setPreferredVoice();
       this.setPreferredVoice();
     }
-
-    // Do not loop to avoid mobile music player UI
-    this.alarmAudio.loop = false;
-    this.alarmAudio.preload = 'auto';
+    this.alarmAudio.loop = true;
   }
 
   private setPreferredVoice() {
@@ -40,39 +38,41 @@ class NotificationService {
       return this.hasPermission;
     }
 
-    console.warn("⚠️ Notification previously denied by user");
     return false;
   }
 
-  // 🔔 System notification + voice
-  showNotification(title: string, body: string): void {
-    console.log("📢 Showing notification:", { title, body });
+  // ✅ Updated to use Service Worker for PWA compatibility
+  async showNotification(title: string, body: string): Promise<void> {
+    const options: NotificationOptions = {
+      body,
+      icon: '/eye-icon.png',
+      tag: 'eyecare-reminder',
+      requireInteraction: true
+    };
 
-    if (this.hasPermission) {
-      const notification = new Notification(title, {
-        body,
-        icon: '/eye-icon.png',
-        tag: 'eyecare-reminder',
-        requireInteraction: true
-      });
-
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-
-      setTimeout(() => {
-        notification.close();
-      }, 10000);
-    } else {
-      alert(`${title}: ${body}`); // Optional fallback
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg && reg.active) {
+        reg.active.postMessage({
+          type: 'SHOW_NOTIFICATION',
+          payload: { title, options }
+        });
+        console.log('✅ Notification sent to Service Worker');
+      } else if (this.hasPermission) {
+        new Notification(title, options);
+        console.log('⚠️ Fallback to direct notification');
+      } else {
+        console.warn('❌ No permission to show notification');
+        alert(`${title}: ${body}`);
+      }
+    } catch (error) {
+      console.error('❌ Notification error:', error);
     }
 
     this.speak(`${title}. ${body}`);
     this.playBeep();
   }
 
-  // 🗣️ Speak using system voice
   private speak(message: string): void {
     if ('speechSynthesis' in window) {
       const utter = new SpeechSynthesisUtterance(message);
@@ -84,28 +84,17 @@ class NotificationService {
     }
   }
 
-  // 🔊 Play short reminder sound
   private playBeep(): void {
     const beep = new Audio('/reminder.mp3');
-    beep.volume = 1;
     beep.play().catch(() => console.warn('Beep blocked by autoplay policy'));
   }
 
-  // 🚨 Show popup + play alarm for limited time to avoid music session
   showPopupAlert(message: string, onStop: () => void): void {
-    // Reset and play alarm
     this.alarmAudio.currentTime = 0;
     this.alarmAudio.play().catch(() => console.warn('Alarm play failed'));
 
-    // Auto stop alarm after 5 seconds to prevent music session
-    setTimeout(() => {
-      this.alarmAudio.pause();
-      this.alarmAudio.currentTime = 0;
-    }, 5000);
-
-    // Create popup modal
     const overlay = document.createElement('div');
-    overlay.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70';
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50';
     overlay.innerHTML = `
       <div class="bg-white p-8 rounded-xl shadow-xl max-w-md w-full text-center space-y-4">
         <h2 class="text-2xl font-bold text-red-600">⏰ Medication Alert</h2>
